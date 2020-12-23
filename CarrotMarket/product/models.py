@@ -12,14 +12,13 @@ class Product(models.Model):
 
 
 class Buy(models.Model):
-    user = models.ForeignKey(User, related_name='buy', on_delete=models.CASCADE)
+    buyer = models.ForeignKey(User, related_name='buy', on_delete=models.CASCADE)
     product = models.OneToOneField(Product, related_name='buy', on_delete=models.CASCADE)
-    sold_at = models.DateTimeField(auto_now=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = (
-            ('user', 'product')
+            ('buyer', 'product')
         )
 
 
@@ -34,21 +33,25 @@ class LikeProduct(models.Model):
 
 
 
-class CategoryProduct(models.Model): #ToBeDiscussed
-    CATEGORIES_PRODUCT = models.TextChoices('CATEGORIES_PRODUCT',
-                                            '디지털/가전'
-                                            '가구/인테리어'
-                                            '유아동/유아도서'
-                                            '생활/가공식품'
-                                            '스포츠/레저'
-                                            '여성잡화'
-                                            '여성의류'
-                                            '남성패션/잡화'
-                                            '게임/취미'
-                                            '뷰티/미용'
-                                            '반려동물용품'
-                                            '도서/티켓/음반'
-                                            '식물'
-                                            '기타중고물품'
-                                            '삽니다')
-    categories_product = models.CharField(primary_key=True, choices=CATEGORIES_PRODUCT.choices, max_length=10)
+class CategoryOfProduct(models.Model): #ToBeDiscussed
+
+
+    CATEGORY_PRODUCT = (
+
+        (1,'디지털/가전'),
+        (2,'가구/인테리어'),
+        (3,'유아동/유아도서'),
+        (4,'생활/가공식품'),
+        (5,'스포츠/레저'),
+        (6,'여성잡화'),
+        (7,'여성의류'),
+        (8,'남성패션/잡화'),
+        (9,'게임/취미'),
+        (10,'뷰티/미용'),
+        (11,'반려동물용품'),
+        (12,'도서/티켓/음반'),
+        (13,'식물'),
+        (14,'기타중고물품'),
+        (15,'삽니다'),
+    )
+    category_product = models.PositiveSmallIntegerField(primary_key=True, choices=CATEGORY_PRODUCT)
