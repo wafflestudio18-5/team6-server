@@ -1,4 +1,3 @@
 # team6-server
 
-
-Tutorial commit
+Tutorial Commit
