@@ -2,14 +2,7 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
-class Article(models.Model):
-    user = models.ForeignKey(User, related_name='article', on_delete=models.CASCADE)
-    category = models.ForeignKey(CategoryOfArticle, related_name='article', on_delete=models.CASCADE)
-    content = models.TextField(db_index=True)
-    title = models.CharField(max_length=50, db_index=True)
-
-
-class CategoryOfArticle(models.Model):  # ToBeDiscussed
+class CategoryOfArticle(models.Model):
     CATEGORY_ARTICLE = (
         (1, '동네사건사고'),
         (2, '동네생활이야기'),
@@ -17,7 +10,14 @@ class CategoryOfArticle(models.Model):  # ToBeDiscussed
         (4, '우리동네질'),
     )
 
-    category_article = models.CharField(primary_key=True, choices=CATEGORY_ARTICLE)
+    category_article = models.PositiveSmallIntegerField(primary_key=True, choices=CATEGORY_ARTICLE)
+
+
+class Article(models.Model):
+    user = models.ForeignKey(User, related_name='article', on_delete=models.CASCADE)
+    category = models.ForeignKey(CategoryOfArticle, related_name='article', on_delete=models.CASCADE)
+    content = models.TextField(db_index=True)
+    title = models.CharField(max_length=50, db_index=True)
 
 
 class Comment(models.Model):
