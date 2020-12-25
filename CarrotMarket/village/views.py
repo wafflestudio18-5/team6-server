@@ -28,13 +28,13 @@ class ArticleViewSet(viewsets.GenericViewSet):
         content = request.data.get('content')
 
         if not title or not content:
-            return Response({"error": "title and content cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)            
+            return Response({"message": "title and content cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)            
 
         user = request.user
 
         articles = Article.objects.filter(user_id=user,title=title)
 
-        if articles:
+        if articles.exists():
             return Response({"error": "article with same writer and title is invalid."}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(data=request.data)
@@ -82,17 +82,9 @@ class ArticleViewSet(viewsets.GenericViewSet):
 
         article = Article.objects.filter(user_id=user,title=title)
 
-        if not article
+        if not article.exists():
             return Response({"error": "There is no such article."}, status=status.HTTP_400_BAD_REQUEST)
 
         article.delete()
 
-        return Response({"error": "Successfully deleted."})
-
-
-
-    
-
-
-
-# Create your views here.
+        return Response({"message": "Successfully deleted."})

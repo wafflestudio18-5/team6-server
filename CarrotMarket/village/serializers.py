@@ -31,19 +31,19 @@ class ArticleSerializer(serializers.ModelSerializer):
         return data
     
     def get_user(self, article):
-        
-        # userserializers need
-       
-        return None
-    
+        try:
+            return UserSerializer(article.user,context=self.context).data
+        except ObjectDoesNotExist:
+            return serializers.ValidationError("no such user")
+
     def get_category(self, article):
         try:
             context = self.context
             context['category_article'] = context['category']
-
             return CategoryOfArticleSerializer(article.category,context=context).data
+        
         except ObjectDoesNotExist:
-            return None
+            return serializers.ValidationError("cannot determine category")
 
 class CategoryOfArticleSerializer(serializers.ModelSerializer):
     category_article = serializer.IntegerField()
