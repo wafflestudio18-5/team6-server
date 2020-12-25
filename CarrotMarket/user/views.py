@@ -71,11 +71,11 @@ class UserViewSet(viewsets.GenericViewSet):
     # PUT /api/v1/user/me/  # 유저 정보 수정 (나)
     def update(self, request, pk=None):
         if pk != 'me':
-            return Response({"error": "Can't update other Users information"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Can't update other Users information"}, status=status.HTTP_404_NOT_FOUND)
 
         user = request.user
 
         serializer = self.get_serializer(user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.update(user, serializer.validated_data)
-        return Response(serializer.data)X
+        return Response(serializer.data)
