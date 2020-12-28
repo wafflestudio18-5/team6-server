@@ -28,7 +28,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         title = data.get('title')
         content = data.get('content')
 
-        if title == "" or content == ""
+        if title == "" or content == "":
             return serializers.ValidationError("title and content cannot be empty")
 
         return data
