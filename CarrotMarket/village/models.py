@@ -16,18 +16,30 @@ class CategoryOfArticle(models.Model):
 class Article(models.Model):
     user = models.ForeignKey(User, related_name='article', on_delete=models.CASCADE)
     category = models.ForeignKey(CategoryOfArticle, related_name='article', on_delete=models.CASCADE)
-    content = models.TextField(db_index=True)
+
+    contents = models.TextField(db_index=True)
     title = models.CharField(max_length=50, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    like_count = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["-created_at"]
 
 
 class Comment(models.Model):
     article = models.ForeignKey(Article, related_name='comment', on_delete=models.CASCADE)
     user = models.ForeignKey(User, related_name='comment', on_delete=models.CASCADE)
+
     content = models.CharField(max_length=100, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(null=True)
+
+    class Meta:
+        ordering = ["-created_at"]
 
 
 class LikeArticle(models.Model):

@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from django.core.exceptions import ObjectDoesNotExist
 
 from user.serializers import *
@@ -7,6 +8,7 @@ from village.models import Article,CategoryOfArticle
 class ArticleSerializer(serializers.ModelSerializer):
     title = serializer.CharField()
     content = serializer.CharField()
+
     user = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
 
@@ -19,6 +21,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             'user',
             'category',
         )
+
     
     def validate(self, data):
         
@@ -33,6 +36,7 @@ class ArticleSerializer(serializers.ModelSerializer):
     def get_user(self, article):
         try:
             return UserSerializer(article.user,context=self.context).data
+
         except ObjectDoesNotExist:
             return serializers.ValidationError("no such user")
 
@@ -40,6 +44,7 @@ class ArticleSerializer(serializers.ModelSerializer):
         try:
             context = self.context
             context['category_article'] = context['category']
+
             return CategoryOfArticleSerializer(article.category,context=context).data
         
         except ObjectDoesNotExist:
@@ -53,7 +58,9 @@ class CategoryOfArticleSerializer(serializers.ModelSerializer):
         fields = (
             'category_article',
         )
+
     
     def validate(self, data):
 
         return data
+
