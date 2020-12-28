@@ -3,11 +3,11 @@ from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist
 
 from user.serializers import *
-from village.models import Article,CategoryOfArticle
+from village.models import *
 
 class ArticleSerializer(serializers.ModelSerializer):
-    title = serializer.CharField()
-    content = serializer.CharField()
+    title = serializers.CharField()
+    content = serializers.CharField()
 
     user = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
@@ -51,7 +51,7 @@ class ArticleSerializer(serializers.ModelSerializer):
             return serializers.ValidationError("cannot determine category")
 
 class CategoryOfArticleSerializer(serializers.ModelSerializer):
-    category_article = serializer.IntegerField()
+    category_article = serializers.IntegerField()
 
     class Meta:
         model = CategoryOfArticle
@@ -63,4 +63,3 @@ class CategoryOfArticleSerializer(serializers.ModelSerializer):
     def validate(self, data):
 
         return data
-
