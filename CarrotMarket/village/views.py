@@ -1,11 +1,11 @@
 from django.contrib.auth.models import User
+from django.db import transaction
 from django.shortcuts import render, get_object_or_404
 from django.views.generic import detail
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
-
 
 from village.models import Comment, Article, LikeArticle
 from village.serializers import CommentSerializer, ArticleSerializer
@@ -86,6 +86,7 @@ class ArticleViewSet(viewsets.GenericViewSet):
 
         return Response({"message": "Successfully deleted."})
 
+    @transaction.atomic
     @action(detail=True, method=['POST'], url_path='like')
     def like_article(self, request, pk=None):
         user = request.user
