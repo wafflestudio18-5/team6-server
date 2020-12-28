@@ -7,7 +7,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticate
 from rest_framework.response import Response
 
 from village.models import Comment, Article, LikeArticle
-from village.serializers import CommentSerializer, ArticleSerializer, LikeArticleSerializer
+from village.serializers import CommentSerializer, ArticleSerializer
 
 
 class ArticleViewSet(viewsets.GenericViewSet):
