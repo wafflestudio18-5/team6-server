@@ -1,8 +1,12 @@
+import re
+
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
+from django.core.validators import RegexValidator
 from django.db import transaction
 from rest_framework import serializers, status
 from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import ValidationError
 
 from user.models import UserProfile
 
@@ -46,9 +50,8 @@ class UserSerializer(serializers.ModelSerializer):
             raise api_exception
         if first_name and last_name and not (first_name.isalpha() and last_name.isalpha()):
             api_exception = serializers.ValidationError("First name or last name should not have number.")
-            api_exception.status_code = status.HTTP_404_BAD_REQUEST
+            api_exception.status_code = status.HTTP_400_BAD_REQUEST
             raise api_exception
-
 
         profile_serializer = UserProfileSerializer(data=data, context=self.context)
         profile_serializer.is_valid(raise_exception=True)
@@ -62,14 +65,34 @@ class UserSerializer(serializers.ModelSerializer):
 
         UserProfile.objects.create(**validated_data)
 
-
         return user
 
     def update(self, user, validated_data):
 
-        info = User.Objects.get(pk=user.id)
+        info = User.objects.get(pk=user.id)
         User.objects.filter(pk=user.id).update(**validated_data)
         return info
 
-    
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    area = serializers.IntegerField()
+    kindness = serializers.IntegerField()
+    nickname = serializers.CharField()
+    phone = serializers.CharField(max_length=11,
+                                  required=True,
+                                  validators=[RegexValidator(regex=r'^[0-9]{3}-([0-9]{3}|[0-9]{4})-[0-9]{4}$',
+                                                             message="Phone number must be entered in the format '000-0000-0000'",
+                                                             )
+                                              ]
+                                  )
+
+    class Meta:
+        model = UserProfile
+        fields = [
+            'user',
+            'area',
+            'kindness',
+            'nickname',
+            'phone',
+        ]
