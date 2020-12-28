@@ -1,8 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
 
-<<<<<<< HEAD
-
 class CategoryOfArticle(models.Model):
     CATEGORY_ARTICLE = (
         (1, '동네사건사고'),
@@ -52,9 +50,7 @@ class LikeArticle(models.Model):
         unique_together = (
             ('user', 'article')
         )
-||||||| parent of 4c50bfc (Model design (#1))
-# Create your models here.
-=======
+
 
 class CategoryOfArticle(models.Model):
     CATEGORY_ARTICLE = (
@@ -92,4 +88,4 @@ class LikeArticle(models.Model):
         unique_together = (
             ('user', 'article')
         )
->>>>>>> 4c50bfc (Model design (#1))
+
