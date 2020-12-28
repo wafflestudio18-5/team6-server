@@ -1,4 +1,5 @@
 from rest_framework import serializers
+
 from django.core.exceptions import ObjectDoesNotExist
 
 from user.serializers import *
@@ -59,6 +60,7 @@ class CategoryOfArticleSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         return data
+
 
 class CommentSerializer(serializers.ModelSerializer):
 
