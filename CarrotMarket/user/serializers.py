@@ -7,10 +7,6 @@ from rest_framework.authtoken.models import Token
 from user.models import UserProfile
 
 
-class UserProfileSerializer(object):
-    pass
-
-
 class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
     email = serializers.EmailField(allow_blank=False)
@@ -60,32 +56,20 @@ class UserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        area = validated_data.pop('area')
-        kindness = validated_data.pop('kindness', None)
-        nickname = validated_data.pop('nickname', '')
-        phone = validated_data.pop('phone', '')
 
         user = super(UserSerializer, self).create(validated_data)
         Token.objects.create(user=user)
 
-        UserProfile.objects.create(user=user, area=area, kindness=kindness, nickname=nickname, phone=phone)
+        UserProfile.objects.create(**validated_data)
+
 
         return user
 
     def update(self, user, validated_data):
-        user_profile = user.profile
-        area = validated_data.get('area')
-        kindness = validated_data.get('kindness')
-        nickname = validated_data.get('nickname')
-        phone = validated_data.get('phone')
-        if area is not None or nickname is not None or phone is not None or kindness:
-            if area is not None:
-                user_profile.area = area
-            if nickname is not None:
-                user_profile.nickname = nickname
-            if phone is not None:
-                user_profile.phone = phone
-            if kindness:
-                user_profile.kindness = kindness
-            user_profile.save()
-        super(UserSerializer, self).update(user, validated_data)
+
+        info = User.Objects.get(pk=user.id)
+        User.objects.filter(pk=user.id).update(**validated_data)
+        return info
+
+    
+
