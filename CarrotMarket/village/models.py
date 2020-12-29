@@ -7,10 +7,10 @@ class CategoryOfArticle(models.Model):
         (1, '동네사건사고'),
         (2, '동네생활이야기'),
         (3, '분실/실종센터'),
-        (4, '우리동네질'),
+        (4, '우리동네질문'),
     )
 
-    category_article = models.PositiveSmallIntegerField(primary_key=True, choices=CATEGORY_ARTICLE)
+    category_article = models.PositiveSmallIntegerField(choices=CATEGORY_ARTICLE)
 
 
 class Article(models.Model):
@@ -32,7 +32,7 @@ class Comment(models.Model):
     article = models.ForeignKey(Article, related_name='comment', on_delete=models.CASCADE)
     user = models.ForeignKey(User, related_name='comment', on_delete=models.CASCADE)
 
-    content = models.CharField(max_length=100, db_index=True)
+    contents = models.CharField(max_length=100, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
