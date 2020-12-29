@@ -3,12 +3,14 @@ from rest_framework import serializers
 from django.core.exceptions import ObjectDoesNotExist
 
 from user.serializers import *
+
 from village.models import Article, CategoryOfArticle, Comment
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     contents = serializers.CharField()
+
 
     user = serializers.SerializerMethodField()
     category = serializers.SerializerMethodField()
@@ -29,7 +31,9 @@ class ArticleSerializer(serializers.ModelSerializer):
         title = data.get('title')
         contents = data.get('contents')
 
+
         if title == "" or contents == "":
+
             return serializers.ValidationError("title and content cannot be empty")
 
         return data
@@ -62,6 +66,7 @@ class CategoryOfArticleSerializer(serializers.ModelSerializer):
         )
 
 
+
 class CommentSerializer(serializers.ModelSerializer):
     contents = serializers.CharField(required=True, allow_blank=False)
 
@@ -87,3 +92,4 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_article(self, comment, pk=None):
         article = comment.article.objects(pk=pk)
         return ArticleSerializer(article, context='context').data
+
