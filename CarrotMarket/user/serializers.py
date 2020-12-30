@@ -1,5 +1,3 @@
-import re
-
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator
@@ -19,8 +17,19 @@ class UserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(required=False)
     last_login = serializers.DateTimeField(read_only=True)
     joined_at = serializers.DateTimeField(read_only=True)
-
     userprofile = serializers.SerializerMethodField()
+    area = serializers.CharField(write_only=True, allow_blank=True, required=True)
+    nickname = serializers.CharField(write_only=True, allow_blank=True, required=True)
+    phone = serializers.CharField(write_only=True,
+                                  allow_blank=True,
+                                  max_length=13,
+                                  required=True,
+                                  validators=[RegexValidator(regex=r'^[0-9]{3}-([0-9]{3}|[0-9]{4})-[0-9]{4}$',
+                                                             message="Phone number must be entered in the format '000-0000-0000'",
+                                                             )
+                                              ]
+                                  )
+
 
     class Meta:
         model = User
@@ -34,6 +43,10 @@ class UserSerializer(serializers.ModelSerializer):
             'last_login',
             'joined_at',
             'userprofile',
+            'area',
+            'nickname',
+            'phone',
+
         )
 
     def get_userprofile(self, user):
@@ -60,40 +73,49 @@ class UserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        area = validated_data.pop('area', '')
+        nickname = validated_data.pop('nickname', '')
+        phone = validated_data.pop('phone', '')
 
         user = super(UserSerializer, self).create(validated_data)
         Token.objects.create(user=user)
-
-        UserProfile.objects.create(**validated_data)
+        UserProfile.objects.create(user=user, area=area, nickname=nickname, phone=phone)
 
         return user
 
     def update(self, user, validated_data):
+        area = validated_data.get('area')
+        nickname = validated_data.get('nickname')
+        phone = validated_data.get('phone')
 
-        info = User.objects.get(pk=user.id)
-        User.objects.filter(pk=user.id).update(**validated_data)
-        return info
+        profile = user.userprofile
+        if area is not None:
+            profile.area = area
+        if nickname is not None:
+            profile.nickname = nickname
+        if phone is not None:
+            profile.phone = phone
+        profile.save()
+
+        return super(UserSerializer, self).update(user, validated_data)
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    user = serializers.SerializerMethodField()
-    area = serializers.CharField()
-    kindness = serializers.IntegerField(read_only=True)
-    nickname = serializers.CharField()
-    phone = serializers.CharField(max_length=11,
-                                  required=True,
+    area = serializers.CharField(required=False)
+    nickname = serializers.CharField(required=False)
+    phone = serializers.CharField(max_length=13,
+                                  required=False,
+
                                   validators=[RegexValidator(regex=r'^[0-9]{3}-([0-9]{3}|[0-9]{4})-[0-9]{4}$',
                                                              message="Phone number must be entered in the format '000-0000-0000'",
                                                              )
                                               ]
                                   )
-
     class Meta:
         model = UserProfile
         fields = [
-            'user',
+            'id',
             'area',
-            'kindness',
             'nickname',
             'phone',
         ]
