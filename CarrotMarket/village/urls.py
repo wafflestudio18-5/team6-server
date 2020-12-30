@@ -8,8 +8,6 @@ app_name = 'village'
 
 router = SimpleRouter()
 router.register('feed', ArticleViewSet, basename='feed')
-router.register('comment', CommentViewSet, basename='comment')
+# router.register('comment', CommentViewSet, basename='comment')
 
-urlpatterns = [
-    path('', include(router.urls)),
-]
+urlpatterns = router.urls

@@ -95,7 +95,7 @@ class ArticleViewSet(viewsets.GenericViewSet):
         return Response({"message": "Successfully deleted."})
 
     @transaction.atomic
-    @action(detail=True, method=['POST'], url_path='like')
+    @action(detail=True)
     def like_article(self, request, pk=None):
         user = request.user
         article = get_object_or_404(Article, pk=pk)
