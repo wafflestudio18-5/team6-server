@@ -19,7 +19,8 @@ class UserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(required=False)
     last_login = serializers.DateTimeField(read_only=True)
     joined_at = serializers.DateTimeField(read_only=True)
-    profile = serializers.SerializerMethodField()
+
+    userprofile = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -32,11 +33,11 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'last_login',
             'joined_at',
-            'profile',
+            'userprofile',
         )
 
-    def get_profile(self, user):
-        return UserProfileSerializer(user.profile, context=self.context).data
+    def get_userprofile(self, user):
+        return UserProfileSerializer(user.userprofile, context=self.context).data #여기서 오류 AttributeError: 'collections.OrderedDict' object has no attribute 'userprofile' 넘겨주는 값 잘못되었
 
     def validate_password(self, value):
         return make_password(value)
@@ -53,8 +54,8 @@ class UserSerializer(serializers.ModelSerializer):
             api_exception.status_code = status.HTTP_400_BAD_REQUEST
             raise api_exception
 
-        profile_serializer = UserProfileSerializer(data=data, context=self.context)
-        profile_serializer.is_valid(raise_exception=True)
+        # profile_serializer = UserProfileSerializer(data=data, context=self.context)
+        # profile_serializer.is_valid(raise_exception=True)
         return data
 
     @transaction.atomic
@@ -76,8 +77,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
-    area = serializers.IntegerField()
-    kindness = serializers.IntegerField()
+    area = serializers.CharField()
+    kindness = serializers.IntegerField(read_only=True)
     nickname = serializers.CharField()
     phone = serializers.CharField(max_length=11,
                                   required=True,
@@ -96,3 +97,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'nickname',
             'phone',
         ]
+
+        def validate(self, data):
+            profile_serializer = UserProfileSerializer(data=data, context=self.context)
+            profile_serializer.is_valid(raise_exception=True)
+            return data

@@ -6,23 +6,31 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from user.serializers import UserSerializer
+from user.serializers import UserSerializer, UserProfileSerializer
 
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (IsAuthenticated,)
 
     def get_permissions(self):
         if self.action in ('create', 'login'):
-            return (AllowAny(), )
+            return (AllowAny(),)
         return super(UserViewSet, self).get_permissions()
 
     # POST /api/v1/user/ 회원가입
     def create(self, request):
+
+        user = request.user
+
         serializer = self.get_serializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
+
+        data = serializer.data # get_userprofile 호출
+        data['userprofile'] = UserProfileSerializer(user.userprofile).data
+
         try:
             user = serializer.save()
         except IntegrityError:
@@ -32,6 +40,8 @@ class UserViewSet(viewsets.GenericViewSet):
 
         data = serializer.data
         data['token'] = user.auth_token.key
+        data['userprofile'] = UserProfileSerializer(user.userprofile).data
+
         return Response(data, status=status.HTTP_201_CREATED)
 
     # PUT /api/v1/user/login/  로그인
@@ -51,14 +61,14 @@ class UserViewSet(viewsets.GenericViewSet):
 
         return Response({"error": "Wrong username or wrong password"}, status=status.HTTP_403_FORBIDDEN)
 
-    @action(detail=False, methods=['POST']) #로그아웃
+    @action(detail=False, methods=['POST'])  # 로그아웃
     def logout(self, request):
         logout(request)
         return Response()
 
     # Get /api/v1/user/{user_id} # 유저 정보 가져오기(나 & 남)
     def retrieve(self, request, pk=None):
-        if pk =='me':
+        if pk == 'me':
             user = request.user
         else:
             try:
