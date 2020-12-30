@@ -19,17 +19,10 @@ class UserViewSet(viewsets.GenericViewSet):
             return (AllowAny(),)
         return super(UserViewSet, self).get_permissions()
 
-    # POST /api/v1/user/ 회원가입
+    # POST /user/ 회원가입
     def create(self, request):
-
-        user = request.user
-
         serializer = self.get_serializer(data=request.data)
-
         serializer.is_valid(raise_exception=True)
-
-        data = serializer.data # get_userprofile 호출
-        data['userprofile'] = UserProfileSerializer(user.userprofile).data
 
         try:
             user = serializer.save()
@@ -40,11 +33,10 @@ class UserViewSet(viewsets.GenericViewSet):
 
         data = serializer.data
         data['token'] = user.auth_token.key
-        data['userprofile'] = UserProfileSerializer(user.userprofile).data
 
         return Response(data, status=status.HTTP_201_CREATED)
 
-    # PUT /api/v1/user/login/  로그인
+    # PUT /user/login/  로그인
     @action(detail=False, methods=['PUT'])
     def login(self, request):
         username = request.data.get('username')
@@ -66,7 +58,7 @@ class UserViewSet(viewsets.GenericViewSet):
         logout(request)
         return Response()
 
-    # Get /api/v1/user/{user_id} # 유저 정보 가져오기(나 & 남)
+    # Get /user/{user_id} # 유저 정보 가져오기(나 & 남)
     def retrieve(self, request, pk=None):
         if pk == 'me':
             user = request.user
@@ -78,7 +70,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
         return Response(self.get_serializer(user).data, status=status.HTTP_200_OK)
 
-    # PUT /api/v1/user/me/  # 유저 정보 수정 (나)
+    # PUT /user/me/  # 유저 정보 수정 (나)
     def update(self, request, pk=None):
         if pk != 'me':
             return Response({"error": "Can't update other Users information"}, status=status.HTTP_404_NOT_FOUND)
