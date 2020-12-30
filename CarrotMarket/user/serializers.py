@@ -30,6 +30,7 @@ class UserSerializer(serializers.ModelSerializer):
                                               ]
                                   )
 
+
     class Meta:
         model = User
         fields = (
@@ -45,6 +46,7 @@ class UserSerializer(serializers.ModelSerializer):
             'area',
             'nickname',
             'phone',
+
         )
 
     def get_userprofile(self, user):
@@ -65,8 +67,8 @@ class UserSerializer(serializers.ModelSerializer):
             api_exception.status_code = status.HTTP_400_BAD_REQUEST
             raise api_exception
 
-        profile_serializer = UserProfileSerializer(data=data, context=self.context)
-        profile_serializer.is_valid(raise_exception=True)
+        # profile_serializer = UserProfileSerializer(data=data, context=self.context)
+        # profile_serializer.is_valid(raise_exception=True)
         return data
 
     @transaction.atomic
@@ -103,6 +105,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     nickname = serializers.CharField(required=False)
     phone = serializers.CharField(max_length=13,
                                   required=False,
+
                                   validators=[RegexValidator(regex=r'^[0-9]{3}-([0-9]{3}|[0-9]{4})-[0-9]{4}$',
                                                              message="Phone number must be entered in the format '000-0000-0000'",
                                                              )
@@ -116,3 +119,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'nickname',
             'phone',
         ]
+
+        def validate(self, data):
+            profile_serializer = UserProfileSerializer(data=data, context=self.context)
+            profile_serializer.is_valid(raise_exception=True)
+            return data

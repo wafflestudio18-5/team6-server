@@ -7,3 +7,4 @@ class UserProfile(models.Model):
     area = models.CharField(max_length=20, blank=False)  # ToBeDiscussed
     nickname = models.CharField(max_length=10, db_index=True, blank=False)
     phone = models.CharField(max_length=13, db_index=True, blank=False)
+

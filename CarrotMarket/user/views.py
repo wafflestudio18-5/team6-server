@@ -21,8 +21,13 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # POST /user/ 회원가입
     def create(self, request):
+
+        user = request.user
+
         serializer = self.get_serializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
+
 
         try:
             user = serializer.save()
@@ -33,6 +38,8 @@ class UserViewSet(viewsets.GenericViewSet):
 
         data = serializer.data
         data['token'] = user.auth_token.key
+
+        data['userprofile'] = UserProfileSerializer(user.userprofile).data
 
         return Response(data, status=status.HTTP_201_CREATED)
 
