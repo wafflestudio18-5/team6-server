@@ -2,27 +2,40 @@ from django.contrib.auth.models import User
 from django.db import models
 
 
-class CategoryOfArticle(models.Model):
+# class CategoryOfArticle(models.Model):
+#     # class Category(models.IntegerChoices):
+#     #     REPORT = 1
+#     #     STORY = 2
+#     #     LOSTCENTER = 3
+#     #     QNA = 4
+#     #
+#     # category = models.IntegerField(choices=Category.choices)
+#
+#
+#     CATEGORY_ARTICLE = (
+#         (1, '동네사건사고'),
+#         (2, '동네생활이야기'),
+#         (3, '분실/실종센터'),
+#         (4, '우리동네질문'),
+#     )
+#     category_article = models.PositiveSmallIntegerField(choices=CATEGORY_ARTICLE)
+
+
+class Article(models.Model):
     CATEGORY_ARTICLE = (
         (1, '동네사건사고'),
         (2, '동네생활이야기'),
         (3, '분실/실종센터'),
         (4, '우리동네질문'),
     )
-
-    category_article = models.PositiveSmallIntegerField(choices=CATEGORY_ARTICLE)
-
-
-class Article(models.Model):
     user = models.ForeignKey(User, related_name='article', on_delete=models.CASCADE)
-    category = models.ForeignKey(CategoryOfArticle, related_name='article', on_delete=models.CASCADE)
-
+    # category = models.ForeignKey(CategoryOfArticle, related_name='article', on_delete=models.CASCADE)
+    category = models.PositiveSmallIntegerField(choices=CATEGORY_ARTICLE)
     contents = models.TextField(db_index=True)
     title = models.CharField(max_length=50, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     deleted_at = models.DateTimeField(default=None, null=True)
-
     like_count = models.PositiveIntegerField(default=0)
 
     class Meta:
