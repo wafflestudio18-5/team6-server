@@ -16,19 +16,9 @@ class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     last_login = serializers.DateTimeField(read_only=True)
-    joined_at = serializers.DateTimeField(read_only=True)
+    date_joined = serializers.DateTimeField(read_only=True)
     userprofile = serializers.SerializerMethodField()
-    area = serializers.CharField(write_only=True, allow_blank=True, required=True)
-    nickname = serializers.CharField(write_only=True, allow_blank=True, required=True)
-    phone = serializers.CharField(write_only=True,
-                                  allow_blank=True,
-                                  max_length=13,
-                                  required=True,
-                                  validators=[RegexValidator(regex=r'^[0-9]{3}-([0-9]{3}|[0-9]{4})-[0-9]{4}$',
-                                                             message="Phone number must be entered in the format '000-0000-0000'",
-                                                             )
-                                              ]
-                                  )
+
 
 
     class Meta:
@@ -41,16 +31,13 @@ class UserSerializer(serializers.ModelSerializer):
             'first_name',
             'last_name',
             'last_login',
-            'joined_at',
+            'date_joined',
             'userprofile',
-            'area',
-            'nickname',
-            'phone',
 
         )
 
     def get_userprofile(self, user):
-        return UserProfileSerializer(user.userprofile, context=self.context).data #여기서 오류 AttributeError: 'collections.OrderedDict' object has no attribute 'userprofile' 넘겨주는 값 잘못되었
+        return UserProfileSerializer(user.userprofile, context=self.context).data
 
     def validate_password(self, value):
         return make_password(value)
@@ -67,8 +54,6 @@ class UserSerializer(serializers.ModelSerializer):
             api_exception.status_code = status.HTTP_400_BAD_REQUEST
             raise api_exception
 
-        # profile_serializer = UserProfileSerializer(data=data, context=self.context)
-        # profile_serializer.is_valid(raise_exception=True)
         return data
 
     @transaction.atomic
@@ -114,7 +99,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfile
         fields = [
-            'id',
             'area',
             'nickname',
             'phone',

@@ -28,7 +28,6 @@ class UserViewSet(viewsets.GenericViewSet):
 
         serializer.is_valid(raise_exception=True)
 
-
         try:
             user = serializer.save()
         except IntegrityError:

@@ -4,15 +4,14 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from user.serializers import *
 
-from village.models import Article, CategoryOfArticle, Comment
+from village.models import Article, Comment
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     contents = serializers.CharField()
-
     user = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
+    like_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Article
@@ -25,16 +24,6 @@ class ArticleSerializer(serializers.ModelSerializer):
             'like_count',
         )
 
-    def validate(self, data):
-
-        title = data.get('title')
-        contents = data.get('contents')
-
-        if title == "" or contents == "":
-            return serializers.ValidationError("title and contents cannot be empty")
-
-        return data
-
     def get_user(self, article):
         try:
             return UserSerializer(article.user, context=self.context).data
@@ -42,25 +31,9 @@ class ArticleSerializer(serializers.ModelSerializer):
         except ObjectDoesNotExist:
             return serializers.ValidationError("no such user")
 
-    def get_category(self, article):
-        try:
-            context = self.context
-            context['category_article'] = context['category']
+    def create(self, validated_data):
+        return Article.objects.create(**validated_data)
 
-            return CategoryOfArticleSerializer(article.category, context=context).data
-
-        except ObjectDoesNotExist:
-            return serializers.ValidationError("cannot determine category")
-
-
-class CategoryOfArticleSerializer(serializers.ModelSerializer):
-    category_article = serializers.IntegerField()
-
-    class Meta:
-        model = CategoryOfArticle
-        fields = (
-            'category_article',
-        )
 
 
 class CommentSerializer(serializers.ModelSerializer):

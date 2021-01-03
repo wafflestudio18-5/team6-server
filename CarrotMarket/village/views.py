@@ -26,14 +26,8 @@ class ArticleViewSet(viewsets.GenericViewSet):
 
     def create(self, request):
 
-        title = request.data.get('title')
-        contents = request.data.get('contents')
-
-        if not title or not contents:
-            return Response({"message": "title and content cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
-
         user = request.user
-
+        title = request.data.get('title')
         articles = Article.objects.filter(user_id=user, title=title)
 
         if articles.exists():
@@ -43,10 +37,7 @@ class ArticleViewSet(viewsets.GenericViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        try:
-            article = serializer.save()
-        except AttributeError:
-            return Response({"error": "check information."}, status=status.HTTP_400_BAD_REQUEST)
+        article = serializer.save(user=user)
 
         data = serializer.data
 
@@ -54,7 +45,11 @@ class ArticleViewSet(viewsets.GenericViewSet):
 
     def update(self, request, pk=None):
 
+        user = request.user
         article = get_object_or_404(Article, pk=pk)
+
+        if user != article.user:
+            return Response({"error": "Can't update other User's article"}, status=status.HTTP_403_FORBIDDEN)
 
         serializer = self.get_serializer(article, data=request.data, partial=True)
 
@@ -79,24 +74,19 @@ class ArticleViewSet(viewsets.GenericViewSet):
         return Response(res_data)
 
     def destroy(self, request, pk=None):
-
         user = request.user
-        title = request.data.get('title')
+        article = get_object_or_404(Article, pk=pk)
 
-        article = Article.objects.filter(user_id=user, title=title)
-
-        if not article.exists():
-            return Response({"error": "There is no such article."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # article = get_object_or_404(pk = pk)
+        if user != article.user:
+            return Response({"error": "Can't update other User's article"}, status=status.HTTP_403_FORBIDDEN)
 
         article.delete()
 
         return Response({"message": "Successfully deleted."})
 
     @transaction.atomic
-    @action(detail=True)
-    def like_article(self, request, pk=None):
+    @action(methods=['post'], detail=True)
+    def like(self, request, pk=None):
         user = request.user
         article = get_object_or_404(Article, pk=pk)
         check = user.like_article.filter(article=article)
@@ -105,12 +95,15 @@ class ArticleViewSet(viewsets.GenericViewSet):
             user.like_article.remove(article)
             article.like_count -= 1
             article.save()
+
+            return Response("You Unliked this article.", status=status.HTTP_200_OK)
+
         else:
             user.like_article.add(article)
             article.like_count += 1
             article.save()
 
-        return Response("You liked this article.", status=status.HTTP_200_OK)
+            return Response("You liked this article.", status=status.HTTP_200_OK)
 
 
 class CommentViewSet(viewsets.GenericViewSet):
