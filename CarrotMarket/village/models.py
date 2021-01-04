@@ -8,7 +8,7 @@ class Article(models.Model):
         (3, '분실/실종센터'),
         (4, '우리동네질문'),
     )
-    user = models.ForeignKey(User, related_name='article', on_delete=models.CASCADE)
+    article_writer = models.ForeignKey(User, related_name='article', on_delete=models.CASCADE)
     # category = models.ForeignKey(CategoryOfArticle, related_name='article', on_delete=models.CASCADE)
     category = models.PositiveSmallIntegerField(choices=CATEGORY_ARTICLE)
     contents = models.TextField(db_index=True)
@@ -24,7 +24,7 @@ class Article(models.Model):
 
 class Comment(models.Model):
     article = models.ForeignKey(Article, related_name='comment', on_delete=models.CASCADE)
-    user = models.ForeignKey(User, related_name='comment', on_delete=models.CASCADE)
+    comment_writer = models.ForeignKey(User, related_name='comment', on_delete=models.CASCADE)
 
     contents = models.CharField(max_length=100, db_index=True)
 

@@ -12,20 +12,22 @@ class ArticleSerializer(serializers.ModelSerializer):
     contents = serializers.CharField()
     userprofile = serializers.SerializerMethodField()
     like_count = serializers.IntegerField(read_only=True)
+    article_id = serializers.ReadOnlyField(source='id')
 
     class Meta:
         model = Article
         fields = (
-            'userprofile',
-            'id',
+            'article_id',
             'title',
+            'article_writer_id',
+            'userprofile',
             'contents',
             'category',
             'like_count',
         )
 
     def get_userprofile(self, article):
-        data = UserProfileSerializer(article.user.userprofile, context=self.context).data
+        data = UserProfileSerializer(article.article_writer.userprofile, context=self.context).data
         data.pop('phone')
         try:
             return data
@@ -40,14 +42,15 @@ class ArticleSerializer(serializers.ModelSerializer):
 class CommentSerializer(serializers.ModelSerializer):
     contents = serializers.CharField(required=True, allow_blank=False)
     userprofile = serializers.SerializerMethodField()
-
+    comment_id = serializers.ReadOnlyField(source='id')
     class Meta:
         model = Comment
         fields = (
-            'user_id',
+            'comment_writer_id',
             'userprofile',
             'article_id',
-            'id',
+            # 'article',
+            'comment_id',
             'contents',
             'created_at',
             'updated_at',
@@ -55,7 +58,7 @@ class CommentSerializer(serializers.ModelSerializer):
         )
 
     read_only_fields = [
-        'id',
+        'comment_id',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -66,7 +69,7 @@ class CommentSerializer(serializers.ModelSerializer):
         return ArticleSerializer(article_id, context='context').data
 
     def get_userprofile(self, comment):
-        data = UserProfileSerializer(comment.user.userprofile, context=self.context).data
+        data = UserProfileSerializer(comment.comment_writer.userprofile, context=self.context).data
         data.pop('phone')
         return data
 
