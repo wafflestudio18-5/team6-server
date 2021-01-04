@@ -76,6 +76,20 @@ class UserViewSet(viewsets.GenericViewSet):
 
         return Response(self.get_serializer(user).data, status=status.HTTP_200_OK)
 
+    #
+    # #/user/me/likearticle/{likearticle_id}
+    # @action(detail=False, methods=['GET'])
+    # def likearticle(self,request):
+    #
+    #     pass
+    #
+    # #/user/me/articles/
+    # @action(detail=False, methods=['GET'])
+    # def articles(self,request):
+    #
+    #     pass
+
+
     # PUT /user/me/  # 유저 정보 수정 (나)
     def update(self, request, pk=None):
         if pk != 'me':

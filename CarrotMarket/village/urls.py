@@ -2,7 +2,7 @@ from django.conf.urls import url
 from django.urls import path, include
 from rest_framework.routers import SimpleRouter
 
-from village.views import ArticleViewSet, CommentViewSet
+from village.views import ArticleViewSet
 
 app_name = 'village'
 
