@@ -1,14 +1,26 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.shortcuts import redirect
+import urllib
+import os
+import json
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))   # 프로젝트/accounts
+
+with open(os.path.join(BASE_DIR, 'CarrotMarket/secrets.json'), 'rb') as secret_file:
+    secrets = json.load(secret_file)
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from user.serializers import UserSerializer, UserProfileSerializer
+from rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.kakao import views as kakao_views
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
 import requests
-
+from django.shortcuts import redirect
+from .models import User, UserProfile
 
 
 class UserViewSet(viewsets.GenericViewSet):
@@ -25,7 +37,7 @@ class UserViewSet(viewsets.GenericViewSet):
     def create(self, request):
         data = request.data
         usertype = request.POST.get('user_type', 'django')
-        if usertype != 'kakao' and usertype != 'django':
+        if usertype != 'kakao' and usertype != 'django': ###
             return Response({"error": "wrong usertype: usertype must be 'django' or 'kakao'"}, status=status.HTTP_400_BAD_REQUEST)
         if usertype =='kakao':
             access_token= request.POST.get('access_token', '')
@@ -55,19 +67,20 @@ class UserViewSet(viewsets.GenericViewSet):
                 user = User.objects.get(username = username)
                 login(request, user)
 
+                User.objects.filter(username=username).update(email=email)###
+
+                UserProfile.objects.filter(user=user).update(nickname=username, user_type ='kakao')###
+                # 위치 옮김
                 data = self.get_serializer(user).data
                 token, created = Token.objects.get_or_create(user=user)
                 data['token'] = token.key
 
-                User.objects.filter(username=username).update(nickname=username, email=email, user_type ='kakao')
-
                 return Response(data, status=status.HTTP_200_OK)
             else: #신규 유저의 카카오 로그인
-               data['username'] = username
-               data['email'] = email
+               data = {"username":username, "email":email, "user_type":'kakao'} ###
 #               data['profile_image'] = profile_image
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=data) ###
         serializer.is_valid(raise_exception=True)
         try:
             user = serializer.save()
@@ -126,3 +139,33 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.update(user, serializer.validated_data)
         return Response(serializer.data)
+
+    def delete(self, request, pk=None):
+        if pk != 'me':
+            return Response({"error": "Can't delete Other User"}, status=status.HTTP_403_FORBIDDEN)
+        if not request.user.is_authenticated:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
+        user=request.user
+        profile=request.user.userprofile
+        logout(request)
+        user.delete()
+        profile.delete()
+        return Response(status=status.HTTP_200_OK)
+
+def kakao_login(request):
+    app_rest_api_key = secrets['KAKAO']["REST_API_KEY"]
+    redirect_uri = secrets['KAKAO']["MAIN_DOMAIN"] + "/user/login/kakao/callback/"
+    return redirect(
+        f"https://kauth.kakao.com/oauth/authorize?client_id={app_rest_api_key}&redirect_uri={redirect_uri}&response_type=code"
+    )
+
+# access token 요청
+def kakao_callback(request):
+    app_rest_api_key = secrets['KAKAO']["REST_API_KEY"]
+    redirect_uri = secrets['KAKAO']["MAIN_DOMAIN"] + "/user/login/kakao/callback/"
+    user_token = request.GET.get("code")
+    return redirect(
+        f"https://kauth.kakao.com/oauth/token?grant_type=authorization_code&client_id={app_rest_api_key}&redirect_uri={redirect_uri}&code={user_token}"
+
+    )

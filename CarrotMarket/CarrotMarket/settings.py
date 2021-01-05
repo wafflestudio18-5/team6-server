@@ -38,8 +38,18 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+# 카카오 소셜로그인
+    'django.contrib.sites',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.auth0',
+    'allauth.socialaccount.providers.kakao',
+
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_auth',
+    'rest_auth.registration',
 
     'user.apps.UserConfig',
 
@@ -142,3 +152,11 @@ REST_FRAMEWORK = {
     )
 
 }
+
+# Kakao login
+LOGIN_REDIRECT_URL = '/' # 로그인 후 리디렉션할 페이지
+ACCOUNT_LOGOUT_REDIRECT_URL = "/"  # 로그아웃 후 리디렉션 할 페이지
+ACCOUNT_LOGOUT_ON_GET = True # 로그아웃 버튼 클릭 시 자동 로그아웃
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
+
+SITE_ID = 1

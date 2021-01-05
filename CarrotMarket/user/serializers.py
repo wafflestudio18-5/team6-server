@@ -13,7 +13,7 @@ class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(required=True)
     user_type = serializers.CharField(write_only=True, allow_blank=True, required=False, default = 'django')
     email = serializers.EmailField(allow_blank=False)
-    password = serializers.CharField(write_only=True)
+    password = serializers.CharField(required = False, write_only=True)
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     last_login = serializers.DateTimeField(read_only=True)
