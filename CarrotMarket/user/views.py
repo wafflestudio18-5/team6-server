@@ -56,9 +56,10 @@ class UserViewSet(viewsets.GenericViewSet):
                 user = User.objects.get(username = username)
                 login(request, user)
 
-                User.objects.filter(username=username).update(email=email)  ###
+                if usertype == 'django':
+                    User.objects.filter(username=username).update(email=email)  ###
+                    UserProfile.objects.filter(user=user).update(nickname=username, user_type='kakao')  ###
 
-                UserProfile.objects.filter(user=user).update(nickname=username, user_type='kakao')  ###
                 # 위치 옮김
                 data = self.get_serializer(user).data
                 token, created = Token.objects.get_or_create(user=user)
