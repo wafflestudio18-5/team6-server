@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from user.serializers import UserSerializer, UserProfileSerializer
+from .models import User, UserProfile
 import requests
 
 
@@ -55,19 +56,20 @@ class UserViewSet(viewsets.GenericViewSet):
                 user = User.objects.get(username = username)
                 login(request, user)
 
+                User.objects.filter(username=username).update(email=email)  ###
+
+                UserProfile.objects.filter(user=user).update(nickname=username, user_type='kakao')  ###
+                # 위치 옮김
                 data = self.get_serializer(user).data
                 token, created = Token.objects.get_or_create(user=user)
                 data['token'] = token.key
 
-                User.objects.filter(username=username).update(nickname=username, email=email, user_type ='kakao')
-
                 return Response(data, status=status.HTTP_200_OK)
             else: #신규 유저의 카카오 로그인
-               data['username'] = username
-               data['email'] = email
+                data = {"username": username, "email": email, "user_type": 'kakao'}  ###
 #               data['profile_image'] = profile_image
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         try:
             user = serializer.save()
