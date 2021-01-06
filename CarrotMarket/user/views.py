@@ -7,6 +7,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from user.serializers import UserSerializer, UserProfileSerializer
+from .models import User, UserProfile
+import requests
+
 
 
 class UserViewSet(viewsets.GenericViewSet):
@@ -21,13 +24,54 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # POST /user/ 회원가입
     def create(self, request):
+        data = request.data
+        usertype = request.POST.get('user_type', 'django')
+        if usertype != 'kakao' and usertype != 'django':
+            return Response({"error": "wrong usertype: usertype must be 'django' or 'kakao'"}, status=status.HTTP_400_BAD_REQUEST)
+        if usertype =='kakao':
+            access_token= request.POST.get('access_token', '')
 
-        user = request.user
+            if access_token == '' or None:
+                return Response({"error": "Received no access token in request"}, status=status.HTTP_400_BAD_REQUEST)
 
-        serializer = self.get_serializer(data=request.data)
+            profile_request = requests.post(
+                "https://kapi.kakao.com/v2/user/me",
+                headers={"Authorization": f"Bearer {access_token}"},
+            )
+            profile_json = profile_request.json()
 
+            if profile_json == None:
+                return Response({"error": "Received no response from Kakao database"}, status=status.HTTP_404_NOT_FOUND)
+
+            try:# parsing json
+                kakao_account = profile_json.get("kakao_account")
+                email = kakao_account.get("email", None)
+                profile = kakao_account.get("profile")
+                username = profile.get("nickname")
+ #               profile_image = profile.get("thumbnail_image_url")
+            except KeyError:
+                return Response({"error": "Need to agree to terms"}, status=status.HTTP_400_BAD_REQUEST)
+
+            if (User.objects.filter(username=username).exists()): #기존에 가입된 유저가 카카오 로그인
+                user = User.objects.get(username = username)
+                login(request, user)
+
+                if usertype == 'django':
+                    User.objects.filter(username=username).update(email=email)  ###
+                    UserProfile.objects.filter(user=user).update(nickname=username, user_type='kakao')  ###
+
+                # 위치 옮김
+                data = self.get_serializer(user).data
+                token, created = Token.objects.get_or_create(user=user)
+                data['token'] = token.key
+
+                return Response(data, status=status.HTTP_200_OK)
+            else: #신규 유저의 카카오 로그인
+                data = {"username": username, "email": email, "user_type": 'kakao'}  ###
+#               data['profile_image'] = profile_image
+
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
-
         try:
             user = serializer.save()
         except IntegrityError:
@@ -37,8 +81,6 @@ class UserViewSet(viewsets.GenericViewSet):
 
         data = serializer.data
         data['token'] = user.auth_token.key
-
-        data['userprofile'] = UserProfileSerializer(user.userprofile).data
 
         return Response(data, status=status.HTTP_201_CREATED)
 
