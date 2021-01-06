@@ -82,7 +82,7 @@ class ArticleViewSet(viewsets.GenericViewSet):
         article = get_object_or_404(Article, pk=pk)
 
         if user != article.article_writer:
-            return Response({"error": "Can't update other User's article"}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"error": "Can't delete other User's article"}, status=status.HTTP_403_FORBIDDEN)
 
         article.delete()
 
@@ -110,8 +110,8 @@ class ArticleViewSet(viewsets.GenericViewSet):
             return Response("You liked this article.", status=status.HTTP_200_OK)
 
     @transaction.atomic
-    @action(methods=['POST'], detail=True, url_path='write_comment')
-    def write_comment(self, request, pk=None):
+    @action(methods=['POST'], detail=True, url_path='comment_write')
+    def comment_write(self, request, pk=None):
 
         article = get_object_or_404(Article, pk=pk)
         user = request.user
@@ -120,11 +120,137 @@ class ArticleViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save(comment_writer=user, article=article)
         data = serializer.data
+
         return Response(data, status=status.HTTP_201_CREATED)
 
-    @action(methods=['GET'],detail=True, url_path='list_comment')
-    def list_comment(self, request, pk=None):
+    @action(methods=['GET'], detail=True, url_path='comment_list')
+    def comment_list(self, request, pk=None):
+
+        qp_contents = self.request.query_params.get('contents')
 
         article = get_object_or_404(Article, pk=pk)
-        comments = article.comment.filter(article_id=pk)
+        comments = article.comment.get_queryset()
+
+        if qp_contents:
+            comments = comments.filter(contents__icontains=qp_contents)
+
         return Response(CommentSerializer(comments, many=True).data)
+
+    @action(methods=['GET'], detail=True, url_path='comment/(?P<comment_pk>[^/.]+)')
+    def comment_retrieve(self, request, comment_pk, pk=None):
+
+        article = get_object_or_404(Article, pk=pk)
+        comment = get_object_or_404(article.comment, pk=comment_pk)
+
+        return Response(CommentSerializer(comment).data)
+
+    @action(methods=['PUT'], detail=True, url_path='comment_update/(?P<comment_pk>[^/.]+)')
+    def comment_update(self, request, comment_pk, pk=None):
+        user = request.user
+        article = get_object_or_404(Article, pk=pk)
+        comment = get_object_or_404(article.comment, pk=comment_pk)
+
+        if user != comment.comment_writer:
+            return Response({"error": "Can't Update other User's comment"}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = CommentSerializer(comment, data=request.data, partial=True)
+
+        serializer.is_valid(raise_exception=True)
+
+        serializer.update(comment, serializer.validated_data)
+
+        return Response(serializer.data)
+
+    @action(methods=['DELETE'], detail=True, url_path='comment_delete/(?P<comment_pk>[^/.]+)')
+    def comment_delete(self, request, comment_pk, pk=None):
+        user = request.user
+        article = get_object_or_404(Article, pk=pk)
+        comment = get_object_or_404(article.comment, pk=comment_pk)
+
+        if user != comment.comment_writer:
+            return Response({"error": "Can't delete other User's comment"}, status=status.HTTP_403_FORBIDDEN)
+
+        comment.delete()
+
+        return Response({"message": "Successfully deleted."})
+
+    #####################################################################################
+
+    # class CommentViewSet(viewsets.GenericViewSet):
+    #     queryset = Comment.objects.all()
+    #     serializer_class = CommentSerializer
+    #     permission_classes = (IsAuthenticatedOrReadOnly(),)
+    #
+    #     @transaction.atomic
+    #     @action(methods=['POST'], detail=True, url_path='comment')
+    #     def create(self, request):
+    #
+    #         article = get_object_or_404(Article, pk=pk)
+    #
+    #         if not article:
+    #             return Response("error: This article doesn't exist anymore", status=status.HTTP_404_NOT_FOUND)
+    #
+    #         serializer = self.get_serializer(data=request.data)
+    #         serializer.is_valid(raise_exception=True)
+    #         serializer.save(user=request.user, article=article)
+    #         data = serializer.data
+    #         return Response(data, status=status.HTTP_201_CREATED)
+    #
+
+    #
+    # @action(detail=True, url_path='article')
+    # def retrieve(self, request, pk=None):
+    #
+    #     article = Article.objects.get(pk=Comment.article.id)
+    #     if not article:
+    #         return Response("error: This article doesn't exist anymore", status=status.HTTP_404_NOT_FOUND)
+    #
+    #     comment = get_object_or_404(Comment, pk=pk)
+    #     return Response(self.get_serializer(comment).data)
+    #
+    # @action(detail=True, url_path='article')
+    # def update(self, request, pk=None):
+    #
+    #     comment = get_object_or_404(Comment, pk=pk)
+    #
+    #     # 댓글쓴사람의 아이디 == 현재 업뎃할 댓글 아이디(리퀘스트 아이디)
+    #     if Comment.user.id != comment:
+    #         return Response("error: Cannot update others comment.", status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     article = Article.objects.get(pk=Comment.article.id)
+    #     if not article:
+    #         return Response("error: This article doesn't exist anymore", status=status.HTTP_404_NOT_FOUND)
+    #
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     serializer.save(user=request.user, article=article, pk=pk)
+    #
+    #     data = serializer.data
+    #     return Response(data, status=status.HTTP_201_CREATED)
+    #
+    # def destroy(self, request, pk=None):
+    #
+    #     comment = get_object_or_404(Comment, pk=pk)
+    #
+    #     if Comment.user.id != comment:
+    #         return Response("error: Cannot delete others comment.", status=status.HTTP_400_BAD_REQUEST)
+    #
+    #     article = Article.objects.get(pk=Comment.article.id)
+    #     if not article:
+    #         return Response("error: This article doesn't exist anymore", status=status.HTTP_404_NOT_FOUND)
+    #
+    #     comment.delete()
+    #     comment.save()
+    #
+    #     return Response("Deleted this Comment.", status=status.HTTP_200_OK)
+    # def list(self, request):
+    #
+    #     title = self.request.query_params.get('title')
+    #     articles = self.get_queryset().all()
+    #
+    #     if title:
+    #         articles = articles.filter(title__icontains=title)
+    #
+    #     data = ArticleSerializer(articles, many=True).data
+    #
+    #     return Response(data)

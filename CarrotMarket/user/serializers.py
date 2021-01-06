@@ -17,9 +17,20 @@ class UserSerializer(serializers.ModelSerializer):
     last_name = serializers.CharField(required=False)
     last_login = serializers.DateTimeField(read_only=True)
     date_joined = serializers.DateTimeField(read_only=True)
+
     userprofile = serializers.SerializerMethodField()
 
-
+    area = serializers.CharField(write_only=True, allow_blank=True, required=False)
+    nickname = serializers.CharField(write_only=True, allow_blank=True, required=False)
+    phone = serializers.CharField(write_only=True,
+                                  allow_blank=True,
+                                  max_length=13,
+                                  required=False,
+                                  validators=[RegexValidator(regex=r'^[0-9]{3}-([0-9]{3}|[0-9]{4})-[0-9]{4}$',
+                                                             message="Phone number must be entered in the format '000-0000-0000'",
+                                                             )
+                                              ]
+                                  )
 
     class Meta:
         model = User
@@ -33,7 +44,9 @@ class UserSerializer(serializers.ModelSerializer):
             'last_login',
             'date_joined',
             'userprofile',
-
+            'area',
+            'nickname',
+            'phone',
         )
 
     def get_userprofile(self, user):
@@ -54,17 +67,22 @@ class UserSerializer(serializers.ModelSerializer):
             api_exception.status_code = status.HTTP_400_BAD_REQUEST
             raise api_exception
 
+        profile_serializer = UserProfileSerializer(data=data, context=self.context)
+        profile_serializer.is_valid(raise_exception=True)
+
         return data
 
     @transaction.atomic
     def create(self, validated_data):
-        area = validated_data.pop('area', '')
-        nickname = validated_data.pop('nickname', '')
-        phone = validated_data.pop('phone', '')
+        ##validated_data에 왜 userprofile 정보가 없는디?
+        user_data = validated_data.copy()
+        user_data.pop('area','')
+        user_data.pop('nickname','')
+        user_data.pop('phone','')
+        user_data.pop('userprofile','')
 
-        user = super(UserSerializer, self).create(validated_data)
+        user = super(UserSerializer, self).create(user_data)
         Token.objects.create(user=user)
-        UserProfile.objects.create(user=user, area=area, nickname=nickname, phone=phone)
 
         return user
 
@@ -96,15 +114,22 @@ class UserProfileSerializer(serializers.ModelSerializer):
                                                              )
                                               ]
                                   )
+
     class Meta:
         model = UserProfile
         fields = [
+
             'area',
             'nickname',
             'phone',
         ]
 
-        def validate(self, data):
-            profile_serializer = UserProfileSerializer(data=data, context=self.context)
-            profile_serializer.is_valid(raise_exception=True)
-            return data
+    # def validate(self,data):
+    #     nickname = data.get('nickname')
+    #     phone = data.get('phone')
+    #
+    #     if UserProfile.objects.filter(nickname=nickname):
+    #         raise serializers.ValidationError("A user with that nickname already exists")
+    #     if UserProfile.objects.filter(phone=phone):
+    #         raise serializers.ValidationError("A user with that phone-number already exists")
+    #     return data

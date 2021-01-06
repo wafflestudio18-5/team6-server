@@ -6,6 +6,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+
+from user.models import UserProfile
 from user.serializers import UserSerializer, UserProfileSerializer
 
 
@@ -21,23 +23,32 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # POST /user/ 회원가입
     def create(self, request):
-
-        user = request.user
-
         serializer = self.get_serializer(data=request.data)
-
         serializer.is_valid(raise_exception=True)
 
         try:
-            user = serializer.save()
+            user_data = serializer.save()
         except IntegrityError:
             return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
-        login(request, user)
+        login(request, user_data)
+
+        area = request.data.get('area')
+        nickname = request.data.get('nickname')
+        phone = request.data.get('phone')
+        user = request.user
+        UserProfile(user=user, area=area, nickname=nickname, phone=phone)
+        #
+        # if user.userprofile.nickname == nickname:
+        #     return Response({"message": "A user with that nickname already exists"}, status=status.HTTP_400_BAD_REQUEST)
+        # if user.userprofile.phone == phone:
+        #     return Response({"message": "A user with that phone-number already exists"},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+
+        # UserProfile.objects.create(user=user, area=area, nickname=nickname, phone=phone)
 
         data = serializer.data
         data['token'] = user.auth_token.key
-
         data['userprofile'] = UserProfileSerializer(user.userprofile).data
 
         return Response(data, status=status.HTTP_201_CREATED)
@@ -88,7 +99,6 @@ class UserViewSet(viewsets.GenericViewSet):
     # def articles(self,request):
     #
     #     pass
-
 
     # PUT /user/me/  # 유저 정보 수정 (나)
     def update(self, request, pk=None):
