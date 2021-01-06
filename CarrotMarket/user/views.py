@@ -7,6 +7,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from user.serializers import UserSerializer, UserProfileSerializer
+from user.region import *
 
 
 class UserViewSet(viewsets.GenericViewSet):
@@ -88,3 +89,17 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.update(user, serializer.validated_data)
         return Response(serializer.data)
+
+    @action(methods=['GET'], detail=True, url_path='location', url_name='get_location') 
+    def get_location(self, request, pk=None):
+        if pk != 'me':
+            return Response({"error": "Can't get other Users location"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = get_area_information(request.data)
+
+        if data['error_occured'] == "yes":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(data, status=status.HTTP_200_OK)
+        
+
