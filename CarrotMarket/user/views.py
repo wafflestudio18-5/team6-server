@@ -26,15 +26,6 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # POST /user/ 회원가입
     def create(self, request):
-<<<<<<< HEAD
-        serializer = self.get_serializer(data=request.data)
-||||||| de1d9a8
-
-        user = request.user
-
-        serializer = self.get_serializer(data=request.data)
-
-=======
         data = request.data
         usertype = request.POST.get('user_type', 'django')
         if usertype != 'kakao' and usertype != 'django':
@@ -82,41 +73,16 @@ class UserViewSet(viewsets.GenericViewSet):
 #               data['profile_image'] = profile_image
 
         serializer = self.get_serializer(data=data)
->>>>>>> bfb169308378b95badced9cabde14540cc99c4d7
         serializer.is_valid(raise_exception=True)
         try:
-            user_data = serializer.save()
+            user = serializer.save()
         except IntegrityError:
             return Response({"error": "A user with that username already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
-        login(request, user_data)
-
-        area = request.data.get('area')
-        nickname = request.data.get('nickname')
-        phone = request.data.get('phone')
-        user = request.user
-        UserProfile(user=user, area=area, nickname=nickname, phone=phone)
-        #
-        # if user.userprofile.nickname == nickname:
-        #     return Response({"message": "A user with that nickname already exists"}, status=status.HTTP_400_BAD_REQUEST)
-        # if user.userprofile.phone == phone:
-        #     return Response({"message": "A user with that phone-number already exists"},
-        #                     status=status.HTTP_400_BAD_REQUEST)
-
-        # UserProfile.objects.create(user=user, area=area, nickname=nickname, phone=phone)
+        login(request, user)
 
         data = serializer.data
         data['token'] = user.auth_token.key
-<<<<<<< HEAD
-        data['userprofile'] = UserProfileSerializer(user.userprofile).data
-
-||||||| de1d9a8
-
-        data['userprofile'] = UserProfileSerializer(user.userprofile).data
-
-=======
-
->>>>>>> bfb169308378b95badced9cabde14540cc99c4d7
         return Response(data, status=status.HTTP_201_CREATED)
 
     # PUT /user/login/  로그인
@@ -152,19 +118,6 @@ class UserViewSet(viewsets.GenericViewSet):
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
         return Response(self.get_serializer(user).data, status=status.HTTP_200_OK)
-
-    #
-    # #/user/me/likearticle/{likearticle_id}
-    # @action(detail=False, methods=['GET'])
-    # def likearticle(self,request):
-    #
-    #     pass
-    #
-    # #/user/me/articles/
-    # @action(detail=False, methods=['GET'])
-    # def articles(self,request):
-    #
-    #     pass
 
     # PUT /user/me/  # 유저 정보 수정 (나)
     def update(self, request, pk=None):

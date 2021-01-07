@@ -17,7 +17,6 @@ class UserSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(required=False)
     last_name = serializers.CharField(required=False)
     last_login = serializers.DateTimeField(read_only=True)
-
     joined_at = serializers.DateTimeField(read_only=True)
     userprofile = serializers.SerializerMethodField()
     area = serializers.CharField(write_only=True, allow_blank=True, required=False)
@@ -74,12 +73,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-
         area = validated_data.pop('area', '')
         nickname = validated_data.pop('nickname', '')
         phone = validated_data.pop('phone', '')
         user_type = validated_data.pop('user_type', '')
-
         user = super(UserSerializer, self).create(validated_data)
         Token.objects.create(user=user)
         UserProfile.objects.create(user=user, area=area, nickname=nickname, phone=phone, user_type = user_type)
@@ -127,8 +124,3 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'nickname',
             'phone',
         ]
-
-        def validate(self, data):
-            profile_serializer = UserProfileSerializer(data=data, context=self.context)
-            profile_serializer.is_valid(raise_exception=True)
-            return data
