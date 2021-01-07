@@ -70,7 +70,7 @@ class UserSerializer(serializers.ModelSerializer):
 
         profile_serializer = UserProfileSerializer(data=data, context=self.context)
         profile_serializer.is_valid(raise_exception=True)
-
+        return data
 
     @transaction.atomic
     def create(self, validated_data):
