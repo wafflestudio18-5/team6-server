@@ -91,14 +91,31 @@ class UserViewSet(viewsets.GenericViewSet):
         return Response(serializer.data)
 
     @action(methods=['GET'], detail=True, url_path='location', url_name='get_location') 
+
     def get_location(self, request, pk=None):
+        
         if pk != 'me':
             return Response({"error": "Can't get other Users location"}, status=status.HTTP_400_BAD_REQUEST)
 
         data = get_area_information(request.data)
 
-        if data['error_occured'] == "yes":
+        if data['error_occured'] == "latlng_miss":
+            return Response({"message": "latalang information is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if data['error_occured'] == "api response not OK":
             return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = request.user
+        userprofile_data = UserProfileSerializer(user.userprofile).data
+        
+        user_area = userprofile_data["area"]
+        cur_area = data["formatted_address"]
+
+        #print(user_area)
+        #print(cur_area)
+
+        if user_area!=cur_area:
+            return Response({"error": "Could not match area"}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(data, status=status.HTTP_200_OK)
         
