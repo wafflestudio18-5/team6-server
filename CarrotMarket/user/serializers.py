@@ -77,7 +77,6 @@ class UserSerializer(serializers.ModelSerializer):
         nickname = validated_data.pop('nickname', '')
         phone = validated_data.pop('phone', '')
         user_type = validated_data.pop('user_type', '')
-
         user = super(UserSerializer, self).create(validated_data)
         Token.objects.create(user=user)
         UserProfile.objects.create(user=user, area=area, nickname=nickname, phone=phone, user_type = user_type)
@@ -115,6 +114,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
                                                              )
                                               ]
                                   )
+
     class Meta:
         model = UserProfile
         fields = [
