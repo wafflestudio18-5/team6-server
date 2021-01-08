@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError, transaction
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.pagination import PageNumberPagination, CursorPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404, render
@@ -15,12 +16,16 @@ from village.serializers import *
 
 import datetime
 
+class CursorSetPagination(CursorPagination):
+    page_size = 5
+    page_size_query_param = 'page_size'
+
 
 class ArticleViewSet(viewsets.GenericViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
-
     permission_classes = (IsAuthenticated(),)
+    pagination_class = CursorSetPagination
 
     def get_permissions(self):
         return self.permission_classes

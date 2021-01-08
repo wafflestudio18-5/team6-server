@@ -15,7 +15,6 @@ class Article(models.Model):
     title = models.CharField(max_length=50, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(default=None, null=True)
     like_count = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -30,7 +29,6 @@ class Comment(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    deleted_at = models.DateTimeField(default=None, null=True)
 
     class Meta:
         ordering = ["-created_at"]
