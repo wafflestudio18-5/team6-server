@@ -4,74 +4,53 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from user.serializers import *
 
-from village.models import Article, CategoryOfArticle, Comment
+from village.models import Article, Comment
 
 
 class ArticleSerializer(serializers.ModelSerializer):
     title = serializers.CharField()
     contents = serializers.CharField()
-
-    user = serializers.SerializerMethodField()
-    category = serializers.SerializerMethodField()
+    userprofile = serializers.SerializerMethodField()
+    like_count = serializers.IntegerField(read_only=True)
+    article_id = serializers.ReadOnlyField(source='id')
 
     class Meta:
         model = Article
         fields = (
-            'id',
+            'article_id',
             'title',
+            'article_writer_id',
+            'userprofile',
             'contents',
-            'user',
             'category',
             'like_count',
         )
 
-    def validate(self, data):
-
-        title = data.get('title')
-        contents = data.get('contents')
-
-        if title == "" or contents == "":
-            return serializers.ValidationError("title and contents cannot be empty")
-
-        return data
-
-    def get_user(self, article):
+    def get_userprofile(self, article):
+        data = UserProfileSerializer(article.article_writer.userprofile, context=self.context).data
+        data.pop('phone')
         try:
-            return UserSerializer(article.user, context=self.context).data
+            return data
 
         except ObjectDoesNotExist:
             return serializers.ValidationError("no such user")
 
-    def get_category(self, article):
-        try:
-            context = self.context
-            context['category_article'] = context['category']
-
-            return CategoryOfArticleSerializer(article.category, context=context).data
-
-        except ObjectDoesNotExist:
-            return serializers.ValidationError("cannot determine category")
-
-
-class CategoryOfArticleSerializer(serializers.ModelSerializer):
-    category_article = serializers.IntegerField()
-
-    class Meta:
-        model = CategoryOfArticle
-        fields = (
-            'category_article',
-        )
+    def create(self, validated_data):
+        return Article.objects.create(**validated_data)
 
 
 class CommentSerializer(serializers.ModelSerializer):
     contents = serializers.CharField(required=True, allow_blank=False)
-
+    userprofile = serializers.SerializerMethodField()
+    comment_id = serializers.ReadOnlyField(source='id')
     class Meta:
         model = Comment
         fields = (
-            'id',
-            'user',
-            'article',
+            'comment_writer_id',#pk
+            'userprofile',
+            'article_id',
+            # 'article',
+            'comment_id',
             'contents',
             'created_at',
             'updated_at',
@@ -79,12 +58,18 @@ class CommentSerializer(serializers.ModelSerializer):
         )
 
     read_only_fields = [
-        'id',
+        'comment_id',
         'created_at',
         'updated_at',
         'deleted_at',
     ]
 
-    def get_article(self, comment, pk=None):
-        article = comment.article.objects(pk=pk)
-        return ArticleSerializer(article, context='context').data
+    def get_article_id(self, comment, pk=None):
+        article_id = comment.article.objects(pk=pk).id
+        return ArticleSerializer(article_id, context='context').data
+
+    def get_userprofile(self, comment):
+        data = UserProfileSerializer(comment.comment_writer.userprofile, context=self.context).data
+        data.pop('phone')
+        return data
+
