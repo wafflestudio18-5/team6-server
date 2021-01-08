@@ -1,6 +1,7 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.http import QueryDict
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -25,10 +26,32 @@ class UserViewSet(viewsets.GenericViewSet):
 
         user = request.user
 
-        serializer = self.get_serializer(data=request.data)
+        area_data = get_area_information(request.data)
+
+        if area_data['error_occured'] == "latlng_miss":
+            return Response({"message": "latalang information is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if area_data['error_occured'] == "api response not OK":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if area_data['error_occured'] == "something is wrong":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+
+        #print(request.data)
+
+        data = request.data.dict()
+        data["area"] = area_data["formatted_address"]
+
+        data_request = QueryDict('', mutable=True)
+        data_request.update(data)
+
+        print(data_request)
+
+        #return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(data=data)
 
         serializer.is_valid(raise_exception=True)
-
 
         try:
             user = serializer.save()
