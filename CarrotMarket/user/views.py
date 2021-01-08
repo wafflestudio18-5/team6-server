@@ -1,12 +1,14 @@
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from user.serializers import UserSerializer, UserProfileSerializer
+from village.serializers import ArticleSerializer, CommentSerializer
 from .models import User, UserProfile
 import requests
 
@@ -129,3 +131,44 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.update(user, serializer.validated_data)
         return Response(serializer.data)
+
+    # GET /user/me or user_id/articles/ # 내가 작성한 피드
+    @action(detail=True, methods=['GET'])
+    def articles(self, request, pk=None):
+        if pk =='me':
+            user=request.user
+        else:
+            user = get_object_or_404(User, pk=pk)
+        articles = user.article
+        data = ArticleSerializer(articles, many=True).data
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+    # GET /user/me or user_id/likearticle/ # 내가 좋아요를 누른 피드
+    @action(detail=True, methods=['GET'])
+    def like_articles(self, request, pk=None):
+        if pk =='me':
+            user=request.user
+        else:
+            user = get_object_or_404(User, pk=pk)
+
+        like_article = user.like_article
+        articles = like_article.article
+        data = ArticleSerializer(articles, many=True).data
+
+        return Response(data, status=status.HTTP_200_OK)
+
+
+    # GET /user/me or user_id/comments/ # 내가 작성한 댓글
+    @action(detail=True, methods=['GET'])
+    def comments(self, request, pk=None):
+        if pk == 'me':
+            user = request.user
+        else:
+            user = get_object_or_404(User, pk=pk)
+
+        comments = user.comment
+        data = CommentSerializer(comments, many=True).data
+
+        return Response(data, status=status.HTTP_200_OK)
