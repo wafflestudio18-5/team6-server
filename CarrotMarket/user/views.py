@@ -105,9 +105,13 @@ class UserViewSet(viewsets.GenericViewSet):
         if data['error_occured'] == "api response not OK":
             return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
         
+        if data['error_occured'] == "something is wrong":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
         user = request.user
         userprofile_data = UserProfileSerializer(user.userprofile).data
-        
+
         user_area = userprofile_data["area"]
         cur_area = data["formatted_address"]
 
