@@ -63,7 +63,7 @@ def get_area_information(data):
     
     if not "si" in response_data and not "gu" in response_data:
         response_data = {}
-        response_data['error_occured'] = "something is wrong with si or gu" 
+        response_data['error_occured'] = "something is wrong" 
         return response_data
         
 
