@@ -2,6 +2,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404
+from django.http import QueryDict
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
@@ -12,10 +13,9 @@ from user.models import UserProfile
 from user.serializers import UserSerializer, UserProfileSerializer
 from village.models import LikeArticle, Article
 from village.serializers import ArticleSerializer, CommentSerializer
+from user.region import *
 from .models import User, UserProfile
 import requests
-
-
 
 class UserViewSet(viewsets.GenericViewSet):
     queryset = User.objects.all()
@@ -29,6 +29,7 @@ class UserViewSet(viewsets.GenericViewSet):
 
     # POST /user/ 회원가입
     def create(self, request):
+
         data = request.data
         usertype = request.POST.get('user_type', 'django')
 
@@ -76,10 +77,25 @@ class UserViewSet(viewsets.GenericViewSet):
                 data = {"username": username, "email": email, "user_type": 'kakao'}  ###
 #               data['profile_image'] = profile_image
 
+        area_data = get_area_information(request.data)
+
+        if area_data['error_occured'] == "latlng_miss":
+            return Response({"message": "latalang information is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if area_data['error_occured'] == "api response not OK":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if area_data['error_occured'] == "something is wrong":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data["area"] = area_data["formatted_address"]
+
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
+
         if serializer.validated_data['user_type'] == '':
             serializer.validated_data['user_type'] = 'django'
+
         try:
             user = serializer.save()
         except IntegrityError:
@@ -137,6 +153,7 @@ class UserViewSet(viewsets.GenericViewSet):
         serializer.update(user, serializer.validated_data)
         return Response(serializer.data)
 
+
     # GET /user/me or user_id/articles/ # 내가 작성한 피드
     @action(detail=True, methods=['GET'])
     def articles(self, request, pk=None):
@@ -175,3 +192,38 @@ class UserViewSet(viewsets.GenericViewSet):
         data = CommentSerializer(comments, many=True).data
 
         return Response(data, status=status.HTTP_200_OK)
+
+    @action(methods=['GET'], detail=True, url_path='location', url_name='get_location') 
+
+    def get_location(self, request, pk=None):
+        
+        if pk != 'me':
+            return Response({"error": "Can't get other Users location"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = get_area_information(request.data)
+
+        if data['error_occured'] == "latlng_miss":
+            return Response({"message": "latalang information is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if data['error_occured'] == "api response not OK":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if data['error_occured'] == "something is wrong":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+        
+
+        user = request.user
+        userprofile_data = UserProfileSerializer(user.userprofile).data
+
+        user_area = userprofile_data["area"]
+        cur_area = data["formatted_address"]
+
+        #print(user_area)
+        #print(cur_area)
+
+        if user_area!=cur_area:
+            return Response({"error": "Could not match area"}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response(data, status=status.HTTP_200_OK)
+        
+
