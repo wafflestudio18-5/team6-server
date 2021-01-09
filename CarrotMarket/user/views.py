@@ -86,7 +86,7 @@ class UserViewSet(viewsets.GenericViewSet):
             return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
         
         if area_data['error_occured'] == "something is wrong":
-            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "some component missing"}, status=status.HTTP_400_BAD_REQUEST)
 
         data["area"] = area_data["formatted_address"]
 
