@@ -30,9 +30,21 @@ class UserViewSet(viewsets.GenericViewSet):
     # POST /user/ 회원가입
     def create(self, request):
 
-        data = request.data
+        data = request.data.dict()
         usertype = request.POST.get('user_type', 'django')
 
+        area_data = get_area_information(request.data)
+
+        if area_data['error_occured'] == "latlng_miss":
+            return Response({"message": "latalang information is required"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if area_data['error_occured'] == "api response not OK":
+            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if area_data['error_occured'] == "something is wrong":
+            return Response({"error": "some component missing"}, status=status.HTTP_400_BAD_REQUEST)
+
+        
         if usertype != 'kakao' and usertype != 'django' and usertype !='':
             return Response({"error": "wrong usertype: usertype must be 'django' or 'kakao'"}, status=status.HTTP_400_BAD_REQUEST)
         if usertype =='kakao':
@@ -71,25 +83,17 @@ class UserViewSet(viewsets.GenericViewSet):
                 data = self.get_serializer(user).data
                 token, created = Token.objects.get_or_create(user=user)
                 data['token'] = token.key
+                data["area"] = area_data["formatted_address"]
 
                 return Response(data, status=status.HTTP_200_OK)
             else: #신규 유저의 카카오 로그인
                 data = {"username": username, "email": email, "user_type": 'kakao'}  ###
+                data["area"] = area_data["formatted_address"]
+
 #               data['profile_image'] = profile_image
 
-        area_data = get_area_information(request.data)
-
-        if area_data['error_occured'] == "latlng_miss":
-            return Response({"message": "latalang information is required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if area_data['error_occured'] == "api response not OK":
-            return Response({"error": "Can't get location"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if area_data['error_occured'] == "something is wrong":
-            return Response({"error": "some component missing"}, status=status.HTTP_400_BAD_REQUEST)
-
         data["area"] = area_data["formatted_address"]
-
+        
         serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
 
