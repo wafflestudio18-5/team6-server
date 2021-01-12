@@ -46,22 +46,19 @@ class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = (
-            'comment_writer_id',#pk
+            'comment_writer_id',
             'userprofile',
             'article_id',
-            # 'article',
             'comment_id',
             'contents',
             'created_at',
             'updated_at',
-            'deleted_at',
         )
 
     read_only_fields = [
         'comment_id',
         'created_at',
         'updated_at',
-        'deleted_at',
     ]
 
     def get_article_id(self, comment, pk=None):
